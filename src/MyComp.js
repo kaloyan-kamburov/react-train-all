@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import Field from './FieldComp';
 class MyComp extends Component {
     state = {
         fields: {
@@ -8,43 +9,44 @@ class MyComp extends Component {
         people: [],
         fieldErrors: {
 
-        },
-        counter: 0
+        }
     }
 
     isEmail = (email) => {
         return /^\w+([.-]?\w+)*@\w+([\.-]?\w+)*(.\w{2,3})+$/.test(email);
     }
 
-    onInputChange = (evt) => {
+    onInputChange = ({ name, value, error}) => {
         const fields = this.state.fields;
+        const fieldErrors = this.state.fieldErrors;
 
-        fields[evt.target.name] = evt.target.value;
+        fields[name] = value;
+        fieldErrors[name] = error;
 
-        this.setState({ fields });
+        this.setState({ fields, fieldErrors });
     }
 
     render() {
         return(
             <div>
-                <span>{this.state.counter}</span>
-                <span onClick={() => this.increaseCounter()}>Increase</span>
                 <form onSubmit={this.onFormSubmit}>
-                    <input
-                        placeholder="name"
+                    <Field
+                        placeholder='name'
+                        name='name'
                         value={this.state.fields.name}
                         onChange={this.onInputChange}
-                        name="name" 
-                        type="text"/>
-                    <span style={{color: "red"}}>{this.state.fieldErrors.name}</span>
-                    <input
-                        placeholder="email"
+                        validate={(val) => (val ? false : 'Name Requred')}
+                    />
+                    <br />
+                    <Field
+                        placeholder='email'
+                        name='email'
                         value={this.state.fields.email}
                         onChange={this.onInputChange}
-                        name="email" 
-                        type="text"/>
-                    <span style={{color: "red"}}>{this.state.fieldErrors.email}</span>
-                    <button type="submit">Submit</button>
+                        validate={(val) => (this.isEmail(val) ? false : 'Invalid Email')}
+                    />
+                    <br />
+                    <button type="submit" disabled={this.validate()}>Submit</button>
                 </form>
 
                 <ul>
@@ -54,28 +56,26 @@ class MyComp extends Component {
         )
     }
     
-    validate = (person) => {
-        const errors = {};
+    validate = () => {
+        const person = this.state.fields;
+        const fieldErrors = this.state.fieldErrors;
+        const errMessages = Object.keys(fieldErrors).filter((k) => fieldErrors[k])
 
-        if (!person.name) errors.name = "name required";
-        if (!person.email) errors.email = "email required";
-        if (person.email && !this.isEmail(person.email)) errors.email = "Invalid email";
-
-        return errors;
+        if (!person.name) return true;
+        if (!person.email) return true;
+        if (errMessages.length) return true;
+        
+        return false;
     }
 
     onFormSubmit = (event) => {
-        event.preventDefault();
 
-        const people = [...this.state.people];
-
+        const people = this.state.people;
         const person = this.state.fields;
 
-        const fieldErrors = this.validate(person);
+        event.preventDefault();
 
-        this.setState({fieldErrors});
-
-        if (Object.keys(fieldErrors).length) return;
+        if (this.validate()) return;
 
         this.setState({
             people: people.concat(person),
