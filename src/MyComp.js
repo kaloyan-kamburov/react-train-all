@@ -6,12 +6,24 @@ class MyComp extends Component {
     state = {
         fields: {
             name: '',
-            email: ''
+            email: '',
+            course: null,
+            department: null
         },
         people: [],
-        fieldErrors: {
+        fieldErrors: {},
+        _loading: false,
+        _saveStatus: 'READY'
+    }
 
-        }
+    componentWillMount() {
+        this.setState({ _loading: true});
+        this.apiClient.loadPeople().then((people) => {
+            this.setState({
+                _loading: false,
+                people: people
+            });
+        });
     }
 
     isEmail = (email) => {
@@ -25,7 +37,7 @@ class MyComp extends Component {
         fields[name] = value;
         fieldErrors[name] = error;
 
-        this.setState({ fields, fieldErrors });
+        this.setState({ fields, fieldErrors, _saveStatus: 'READY' });
     }
 
     render() {
@@ -54,7 +66,22 @@ class MyComp extends Component {
                         onChange={this.onInputChange}
                     />
                     <br />
-                    <button type="submit" disabled={this.validate()}>Submit</button>
+
+                    {{
+                        SAVING: <input value='Saving...' type='submit' disabled />,
+                        SUCCESS: <input value='Saved!' type='submit' disabled />,
+                        ERROR: <input
+                            value='Save Failed - Retry?'
+                            type='submit'
+                            disabled={this.validate()}
+                        />,
+                        READY: <input
+                            value='Submit'
+                            type='submit'
+                            disabled={this.validate()}
+                        />
+                    }[this.state._saveStatus]}
+
                 </form>
 
                 <ul>
@@ -79,36 +106,63 @@ class MyComp extends Component {
     }
 
     onFormSubmit = (event) => {
-
-        const people = this.state.people;
         const person = this.state.fields;
-
+        
         event.preventDefault();
-
+        
         if (this.validate()) return;
 
-        this.setState({
-            people: people.concat(person),
-            fields: {
-                name: '',
-                email: ''
+        const people = [...this.state.people, person];
+
+        this.setState({ _saveStatus: 'SAVING'});
+
+        this.apiClient.savePeople(people)
+            .then(() => {
+                this.setState({
+                    people: people,
+                    fields: {
+                        name: '',
+                        email: '',
+                        course: null,
+                        department: null
+                    },
+                    _saveStatus: 'SUCCESS'
+                })
+            })
+            .catch((err) => {
+                console.log(err);
+                this.setState({ _saveStatus: 'ERROR'})
+            })
+
+    }
+
+    
+    count = 1;
+
+    apiClient = {
+        loadPeople: () => {
+            return {
+                then: (callback) => {
+                    setTimeout(() => {
+                        callback(JSON.parse(localStorage.people || '[]'));
+                    }, 1000);
+                }
             }
-        })
+        },
 
+        savePeople: (people) => {
+            const success = true;
+            // const success = !!(this.count++ % 2);
+            // debugger;
+            return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    // if (!success) return reject({ success });
 
-        // const names = [...this.state.names, this.state.name];
-        
-        // this.setState({
-        //     names: names,
-        //     name: ''
-        // });
-
-        // const people = [...this.state.people, this.state.fields]
-        
-        // this.setState({ fields: { name: '', email: ''},people });
-
-        
-
+                    localStorage.people = JSON.stringify(people);
+                    return resolve({ success });
+                }, 100);
+            })
+        }
     }
 }
 
