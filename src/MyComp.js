@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
 import Field from './FieldComp';
+import CourseSelect from './CourseSelect';
+
 class MyComp extends Component {
     state = {
         fields: {
@@ -46,11 +48,17 @@ class MyComp extends Component {
                         validate={(val) => (this.isEmail(val) ? false : 'Invalid Email')}
                     />
                     <br />
+                    <CourseSelect
+                        department={this.state.fields.department}
+                        course={this.state.fields.course}
+                        onChange={this.onInputChange}
+                    />
+                    <br />
                     <button type="submit" disabled={this.validate()}>Submit</button>
                 </form>
 
                 <ul>
-                    {this.state.people.map(( { name, email }, i) => <li key={i}>{name} {email}</li>)}
+                    {this.state.people.map(( { name, email, department, course }, i) => <li key={i}>{name} {email} {department} {course}</li>)}
                 </ul>
             </div>
         )
@@ -63,6 +71,8 @@ class MyComp extends Component {
 
         if (!person.name) return true;
         if (!person.email) return true;
+        if (!person.course) return true;
+        if (!person.department) return true;
         if (errMessages.length) return true;
         
         return false;
